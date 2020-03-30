@@ -21,7 +21,16 @@ const CompareGrid = styled.div`
 `;
 
 const DocumentParagraph = styled.p`
+  line-height: 1.5rem;
+  font-size: 18px;
+  padding: 10px 20px;
+  margin-top: 0;
+  margin-bottom: 10px;
+  /* margin bottom is what we'd use but i can't seem to style the EqualHeight div */
+  margin-top: 10px;
+  /* margin top is needed because of the wrapping div that can't be styled. last child bottom margin of div is not respected */
   height: ${props => (props.isEqualized ? "100%" : "auto")};
+  background: ${props => (props.isEqualized ? "#f7f7f9" : "white")};
 `;
 
 const DocumentContainer = styled.div`
@@ -29,18 +38,6 @@ const DocumentContainer = styled.div`
   background: white;
   padding: 20px;
   overflow-y: auto;
-
-  ${DocumentParagraph} {
-    line-height: 1.5rem;
-    font-size: 18px;
-    background: #f7f7f9;
-    padding: 10px 20px;
-    margin-top: 0;
-    margin-bottom: 10px;
-    /* margin bottom is what we'd use but i can't seem to style the EqualHeight div */
-    margin-top: 10px;
-    /* margin top is needed because of the wrapping div that can't be styled. last child bottom margin of div is not respected */
-  }
 `;
 
 export default function TranslationCompare() {
