@@ -19,7 +19,7 @@ const StyledDocumentParagraph = styled.p`
   padding-top: ${props => (props.isEqualized ? "20px" : "30px")};
 `;
 
-export default function DocumentParagraph({
+function DocumentParagraph({
   isEqualized,
   isHighlighted,
   identifier,
@@ -36,3 +36,5 @@ export default function DocumentParagraph({
     </StyledDocumentParagraph>
   );
 }
+
+export default React.memo(DocumentParagraph);

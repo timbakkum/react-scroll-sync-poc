@@ -28,12 +28,21 @@ const DocumentContainer = styled.div`
   overflow-y: auto;
 `;
 
+const mapText = (parapgraph, i) => {
+  // @TODO refactor to object for easier state updates... see useEffect below for madness..
+  return {
+    segments: parapgraph,
+    isHighlighted: false,
+    id: i
+  };
+};
+
 export default function TranslationCompare() {
   const [isScrollSyncEnabled, setScrollSync] = useState(false);
   const leftPaneRef = useRef(null);
 
   useEffect(() => {
-    // force a scroll event so underlying sync get triggered once.
+    // force a scroll event so underlying sync behaviour get triggered once.
     console.log(leftPaneRef);
     if (isScrollSyncEnabled && leftPaneRef && leftPaneRef.current) {
       const originalValue = leftPaneRef.current.scrollTop;
@@ -44,13 +53,76 @@ export default function TranslationCompare() {
 
   const [highlightedParagraph, setHighLightedParagraph] = useState();
 
+  const target = MOCK_TEXT_NL.text.map(mapText);
+  const source = MOCK_TEXT_EN.text.map(mapText);
+  const [targetText, setTargetText] = useState(target);
+  const [sourceText, setSourceText] = useState(source);
+
   const toggleScrollSync = () => {
     setScrollSync(!isScrollSyncEnabled);
   };
 
-  const handleParagraphClick = key => {
-    setHighLightedParagraph(key);
-  };
+  useEffect(() => {
+    console.log("useEffect highlighted para", highlightedParagraph);
+    if (highlightedParagraph !== undefined) {
+      setTargetText(prevState => {
+        const previousHighlightedId = prevState.find(
+          p => p.isHighlighted === true
+        );
+        if (
+          previousHighlightedId !== undefined &&
+          previousHighlightedId === highlightedParagraph
+        ) {
+          return prevState;
+        }
+        const newState = prevState
+          .map(p => {
+            return p.isHighlighted
+              ? {
+                  ...p,
+                  isHighlighted: false
+                }
+              : p;
+          })
+          .map(p => {
+            return p.id === highlightedParagraph
+              ? {
+                  ...p,
+                  isHighlighted: true
+                }
+              : p;
+          });
+        return newState;
+      });
+
+      setSourceText(prevState => {
+        const previousHighlightedId = prevState.find(
+          p => p.isHighlighted === true
+        );
+        if (previousHighlightedId === highlightedParagraph) {
+          return prevState;
+        }
+        const newState = prevState
+          .map(p => {
+            return p.isHighlighted
+              ? {
+                  ...p,
+                  isHighlighted: false
+                }
+              : p;
+          })
+          .map(p => {
+            return p.id === highlightedParagraph
+              ? {
+                  ...p,
+                  isHighlighted: true
+                }
+              : p;
+          });
+        return newState;
+      });
+    }
+  }, [highlightedParagraph]);
 
   return (
     <>
@@ -65,20 +137,20 @@ export default function TranslationCompare() {
             <CompareGrid>
               <ScrollSyncPane>
                 <DocumentContainer ref={leftPaneRef}>
-                  {MOCK_TEXT_EN.text.map((paragraph, i) => (
+                  {targetText.map(({ segments, id, isHighlighted }) => (
                     <EqualHeightElement
                       tag="div"
-                      key={`EN_${i}`}
-                      name={i}
+                      key={`NL_${id}`}
+                      name={id}
                       disable={!isScrollSyncEnabled}
                     >
                       <DocumentParagraph
                         isEqualized={isScrollSyncEnabled}
-                        isHighlighted={highlightedParagraph === i}
-                        handleClick={handleParagraphClick}
-                        identifier={i}
+                        isHighlighted={isHighlighted}
+                        handleClick={setHighLightedParagraph}
+                        identifier={id}
                       >
-                        {paragraph}
+                        {segments}
                       </DocumentParagraph>
                     </EqualHeightElement>
                   ))}
@@ -86,19 +158,20 @@ export default function TranslationCompare() {
               </ScrollSyncPane>
               <ScrollSyncPane>
                 <DocumentContainer>
-                  {MOCK_TEXT_NL.text.map((paragraph, i) => (
+                  {sourceText.map(({ segments, id, isHighlighted }) => (
                     <EqualHeightElement
-                      key={`NL_${i}`}
-                      name={i}
+                      tag="div"
+                      key={`EN_${id}`}
+                      name={id}
                       disable={!isScrollSyncEnabled}
                     >
                       <DocumentParagraph
                         isEqualized={isScrollSyncEnabled}
-                        isHighlighted={highlightedParagraph === i}
-                        handleClick={handleParagraphClick}
-                        identifier={i}
+                        isHighlighted={isHighlighted}
+                        handleClick={setHighLightedParagraph}
+                        identifier={id}
                       >
-                        {paragraph}
+                        {segments}
                       </DocumentParagraph>
                     </EqualHeightElement>
                   ))}
