@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { EqualHeight, EqualHeightElement } from "react-equal-height";
 import { ScrollSync, ScrollSyncPane } from "react-scroll-sync";
 import styled from "styled-components";
+import DocumentParagraph from "./DocumentParagraph";
 import MOCK_TEXT_EN from "./mocks/mock-en";
 import MOCK_TEXT_NL from "./mocks/mock-nl";
 
@@ -20,22 +21,6 @@ const CompareGrid = styled.div`
   height: 100%;
 `;
 
-const DocumentParagraph = styled.p`
-  line-height: 1.5rem;
-  font-size: 18px;
-  padding: 20px 20px;
-  margin: 0;
-
-  height: ${props => (props.isEqualized ? "100%" : "auto")};
-  background: ${props => (props.isEqualized ? "#f7f7f9" : "white")};
-  /* margin top is needed because of the wrapping div that can't be styled. last child bottom margin of div is not respected */
-  /* margin bottom is what we'd use but EqualHeight wrapper disappears when not equalizing
-   * so we have to get smart with padding and margin top to create the same effect
-  */
-  margin-top: ${props => (props.isEqualized ? "10px" : "0")};
-  padding-top: ${props => (props.isEqualized ? "20px" : "30px")};
-`;
-
 const DocumentContainer = styled.div`
   height: 100%;
   background: white;
@@ -45,8 +30,26 @@ const DocumentContainer = styled.div`
 
 export default function TranslationCompare() {
   const [isScrollSyncEnabled, setScrollSync] = useState(false);
+  const leftPaneRef = useRef(null);
+
+  useEffect(() => {
+    // force a scroll event so underlying sync get triggered once.
+    console.log(leftPaneRef);
+    if (isScrollSyncEnabled && leftPaneRef && leftPaneRef.current) {
+      const originalValue = leftPaneRef.current.scrollTop;
+      leftPaneRef.current.scrollTop = originalValue + 1;
+      leftPaneRef.current.scrollTop = originalValue;
+    }
+  }, [isScrollSyncEnabled]);
+
+  const [highlightedParagraph, setHighLightedParagraph] = useState();
+
   const toggleScrollSync = () => {
     setScrollSync(!isScrollSyncEnabled);
+  };
+
+  const handleParagraphClick = key => {
+    setHighLightedParagraph(key);
   };
 
   return (
@@ -61,7 +64,7 @@ export default function TranslationCompare() {
           <CompareGridWrapper>
             <CompareGrid>
               <ScrollSyncPane>
-                <DocumentContainer>
+                <DocumentContainer ref={leftPaneRef}>
                   {MOCK_TEXT_EN.text.map((paragraph, i) => (
                     <EqualHeightElement
                       tag="div"
@@ -69,7 +72,12 @@ export default function TranslationCompare() {
                       name={i}
                       disable={!isScrollSyncEnabled}
                     >
-                      <DocumentParagraph isEqualized={isScrollSyncEnabled}>
+                      <DocumentParagraph
+                        isEqualized={isScrollSyncEnabled}
+                        isHighlighted={highlightedParagraph === i}
+                        handleClick={handleParagraphClick}
+                        identifier={i}
+                      >
                         {paragraph}
                       </DocumentParagraph>
                     </EqualHeightElement>
@@ -84,7 +92,12 @@ export default function TranslationCompare() {
                       name={i}
                       disable={!isScrollSyncEnabled}
                     >
-                      <DocumentParagraph isEqualized={isScrollSyncEnabled}>
+                      <DocumentParagraph
+                        isEqualized={isScrollSyncEnabled}
+                        isHighlighted={highlightedParagraph === i}
+                        handleClick={handleParagraphClick}
+                        identifier={i}
+                      >
                         {paragraph}
                       </DocumentParagraph>
                     </EqualHeightElement>
