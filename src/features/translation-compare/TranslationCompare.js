@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { EqualHeight, EqualHeightElement } from "react-equal-height";
 import { ScrollSync, ScrollSyncPane } from "react-scroll-sync";
+import { motion } from "framer-motion";
 import styled from "styled-components";
 import DocumentParagraph from "./DocumentParagraph";
 import MOCK_TEXT_EN from "./mocks/mock-en";
@@ -13,12 +14,17 @@ const CompareGridWrapper = styled.div`
 `;
 
 const CompareGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 100%;
-  grid-gap: 20px;
-  align-items: stretch;
+  display: flex;
+  flex-wrap: nowrap;
+  position: relative;
   height: 100%;
+  width: 100%;
+
+  > div {
+    min-width: 46%;
+    width: 46%;
+    margin: 2%;
+  }
 `;
 
 const DocumentContainer = styled.div`
@@ -37,8 +43,15 @@ const mapText = (parapgraph, i) => {
   };
 };
 
+const spring = {
+  type: "spring",
+  damping: 300,
+  stiffness: 300
+};
+
 export default function TranslationCompare() {
   const [isScrollSyncEnabled, setScrollSync] = useState(false);
+  const [isSwapped, setSwapped] = useState(false);
   const leftPaneRef = useRef(null);
 
   useEffect(() => {
@@ -124,59 +137,78 @@ export default function TranslationCompare() {
     }
   }, [highlightedParagraph]);
 
+  const initialPanes = [
+    <ScrollSyncPane key="target">
+      <DocumentContainer ref={leftPaneRef}>
+        <h2>Target</h2>
+        {targetText.map(({ segments, id, isHighlighted }) => (
+          <EqualHeightElement
+            tag="div"
+            key={`NL_${id}`}
+            name={id}
+            disable={!isScrollSyncEnabled}
+          >
+            <DocumentParagraph
+              isEqualized={isScrollSyncEnabled}
+              isHighlighted={isHighlighted}
+              handleClick={setHighLightedParagraph}
+              identifier={id}
+            >
+              {segments}
+            </DocumentParagraph>
+          </EqualHeightElement>
+        ))}
+      </DocumentContainer>
+    </ScrollSyncPane>,
+
+    <ScrollSyncPane key="source">
+      <DocumentContainer>
+        <h2>Source</h2>
+        {sourceText.map(({ segments, id, isHighlighted }) => (
+          <EqualHeightElement
+            tag="div"
+            key={`EN_${id}`}
+            name={id}
+            disable={!isScrollSyncEnabled}
+          >
+            <DocumentParagraph
+              isEqualized={isScrollSyncEnabled}
+              isHighlighted={isHighlighted}
+              handleClick={setHighLightedParagraph}
+              identifier={id}
+            >
+              {segments}
+            </DocumentParagraph>
+          </EqualHeightElement>
+        ))}
+      </DocumentContainer>
+    </ScrollSyncPane>
+  ];
+
+  const [panes, setPanes] = useState(initialPanes);
+
+  useEffect(() => {
+    setPanes(panes.reverse());
+  }, [panes, isSwapped]);
+
   return (
     <>
       <div>
         <button onClick={toggleScrollSync}>
           Toggle Scroll Sync {isScrollSyncEnabled ? "Off" : "On"}
         </button>
+        <hr />
+        <button onClick={() => setSwapped(!isSwapped)}>Swap sides</button>
       </div>
       <ScrollSync enabled={isScrollSyncEnabled}>
         <EqualHeight>
           <CompareGridWrapper>
             <CompareGrid>
-              <ScrollSyncPane>
-                <DocumentContainer ref={leftPaneRef}>
-                  {targetText.map(({ segments, id, isHighlighted }) => (
-                    <EqualHeightElement
-                      tag="div"
-                      key={`NL_${id}`}
-                      name={id}
-                      disable={!isScrollSyncEnabled}
-                    >
-                      <DocumentParagraph
-                        isEqualized={isScrollSyncEnabled}
-                        isHighlighted={isHighlighted}
-                        handleClick={setHighLightedParagraph}
-                        identifier={id}
-                      >
-                        {segments}
-                      </DocumentParagraph>
-                    </EqualHeightElement>
-                  ))}
-                </DocumentContainer>
-              </ScrollSyncPane>
-              <ScrollSyncPane>
-                <DocumentContainer>
-                  {sourceText.map(({ segments, id, isHighlighted }) => (
-                    <EqualHeightElement
-                      tag="div"
-                      key={`EN_${id}`}
-                      name={id}
-                      disable={!isScrollSyncEnabled}
-                    >
-                      <DocumentParagraph
-                        isEqualized={isScrollSyncEnabled}
-                        isHighlighted={isHighlighted}
-                        handleClick={setHighLightedParagraph}
-                        identifier={id}
-                      >
-                        {segments}
-                      </DocumentParagraph>
-                    </EqualHeightElement>
-                  ))}
-                </DocumentContainer>
-              </ScrollSyncPane>
+              {panes.map(component => (
+                <motion.div key={component.key} layoutTransition={spring}>
+                  {component}
+                </motion.div>
+              ))}
             </CompareGrid>
           </CompareGridWrapper>
         </EqualHeight>
